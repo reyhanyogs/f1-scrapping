@@ -89,7 +89,12 @@ func main() {
 		fmt.Println()
 	})
 
-	c.Visit(scrapeUrl("2020"))
+	var year string
+	fmt.Print("Enter the desired F1 season to scrape: ")
+	fmt.Scanln(&year)
+	fmt.Printf("F1 %s Season Scrape Result\n", year)
+
+	c.Visit(scrapeUrl(year))
 }
 
 func scrapeUrl(year string) string {
