@@ -1,100 +1,50 @@
 package main
 
 import (
+	"f1-scrapping/handler"
 	"fmt"
-	"strings"
 
 	"github.com/gocolly/colly/v2"
 )
 
-type driver struct {
-	position string
-	name     string
-	car      string
-	point    string
-}
-
-type constructor struct {
-	position string
-	name     string
-	point    string
-}
-
-type raceWinner struct {
-	date   string
-	track  string
-	winner string
-}
-
-type driverLeadLaps struct {
-	position  string
-	driver    string
-	totalLaps string
-}
-
 func main() {
 	c := colly.NewCollector()
-	drivers := []driver{}
-	constructors := []constructor{}
-	raceWinners := []raceWinner{}
-	driversLeadLaps := []driverLeadLaps{}
 
-	c.OnHTML("div#driver-standings > table.data-table > tbody", func(row *colly.HTMLElement) {
-		row.ForEach("tr", func(_ int, cell *colly.HTMLElement) {
-			driver := driver{}
-			driver.position = cell.ChildText("td:nth-child(1)")
-			driver.name = cell.ChildText("td:nth-child(2) a")
-			driver.car = cell.ChildText("td:nth-child(3)")
-			driver.point = cell.ChildText("td:nth-child(6)")
-			drivers = append(drivers, driver)
-		})
-		fmt.Println(drivers)
-		fmt.Println()
-	})
-
-	c.OnHTML("div#constructor-standings > table.data-table > tbody", func(row *colly.HTMLElement) {
-		row.ForEach("tr", func(_ int, cell *colly.HTMLElement) {
-			constructor := constructor{}
-			constructor.position = cell.ChildText("td:nth-child(1)")
-			constructor.name = cell.ChildText("td:nth-child(2) a")
-			constructor.point = cell.ChildText("td:nth-child(5)")
-			constructors = append(constructors, constructor)
-		})
-		fmt.Println(constructors)
-		fmt.Println()
-	})
-
-	c.OnHTML("div.section > table.data-table > tbody", func(row *colly.HTMLElement) {
-		row.ForEach("tr", func(_ int, cell *colly.HTMLElement) {
-			raceWinner := raceWinner{}
-			raceWinner.date = cell.ChildText("td:nth-child(1)")
-			raceWinner.track = cell.ChildText("td:nth-child(2) a")
-			splitDriverName := strings.Split(cell.ChildText("td:nth-child(3)"), " ")
-			raceWinner.winner = strings.Join(splitDriverName[1:], " ")
-			raceWinners = append(raceWinners, raceWinner)
-		})
-		fmt.Println(raceWinners)
-		fmt.Println()
-	})
-
-	c.OnHTML("div.lead_laps > table.data-table > tbody", func(row *colly.HTMLElement) {
-		row.ForEach("tr", func(_ int, cell *colly.HTMLElement) {
-			driverLeadLaps := driverLeadLaps{}
-			driverLeadLaps.position = cell.ChildText("td:nth-child(1)")
-			driverLeadLaps.driver = cell.ChildText("td:nth-child(2) a")
-			driverLeadLaps.totalLaps = cell.ChildText("td:nth-child(3)")
-			driversLeadLaps = append(driversLeadLaps, driverLeadLaps)
-		})
-		fmt.Println(driversLeadLaps)
-		fmt.Println()
-	})
+	c.OnHTML("div#driver-standings > table.data-table > tbody", handler.DriverConstructor)
+	c.OnHTML("div#constructor-standings > table.data-table > tbody", handler.TeamConstructor)
+	c.OnHTML("div.section > table.data-table > tbody", handler.RaceWinner)
+	c.OnHTML("div.lead_laps > table.data-table > tbody", handler.DriverTotalLeadLaps)
 
 	var year string
-	fmt.Print("Enter the desired F1 season to scrape: ")
+	fmt.Print("Enter The Desired F1 Season to Scrape: ")
 	fmt.Scanln(&year)
-	fmt.Printf("F1 %s Season Scrape Result\n", year)
+	fmt.Printf("F1 %s Season Scrape Result\n\n", year)
 
 	c.Visit(scrapeUrl(year))
+
+	fmt.Printf("%s Driver Constructors Standings\n", year)
+	fmt.Printf("{Position, Driver, Team, Points}\n")
+	for _, data := range handler.DriversConstructor {
+		fmt.Printf("{%s, %s, %s, %s}\n", data.Position, data.Name, data.Team, data.Point)
+	}
+
+	fmt.Printf("\n%s Team Constructors Standings\n", year)
+	fmt.Printf("{Position, Team, Points}\n")
+	for _, data := range handler.TeamsConstructor {
+		fmt.Printf("{%s, %s, %s}\n", data.Position, data.TeamName, data.Point)
+	}
+
+	fmt.Printf("\n%s Track Winner\n", year)
+	fmt.Printf("{Date, Track, Winner}\n")
+	for _, data := range handler.RacesWinner {
+		fmt.Printf("{%s, %s, %s}\n", data.Date, data.Track, data.Winner)
+	}
+
+	fmt.Printf("\nDriver Total Lead Laps\n")
+	fmt.Printf("{Position, Driver, Total Laps}\n")
+	for _, data := range handler.DriversLeadLaps {
+		fmt.Printf("{%s, %s, %s}\n", data.Position, data.DriverName, data.TotalLaps)
+	}
 }
 
 func scrapeUrl(year string) string {
