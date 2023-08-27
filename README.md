@@ -2,8 +2,10 @@
 ## Overview
 This project is a web scraping tool built using the Go programming language and the Colly library. The purpose of the project is to scrape data from the F1 Database website and extract valuable information for further analysis or storage. The project are still in development.
 
-## In Development
+## Feature
 - Allowed user to type the desired F1 Season to scrape
+
+## In Development
 - Export to .xlsx
 - Cleaning the code
 
